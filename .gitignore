@@ -1,0 +1,38 @@
+# Node
+node_modules/
+.pnpm-store/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Build output
+.next/
+dist/
+build/
+out/
+.turbo/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Python (apps/api)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp

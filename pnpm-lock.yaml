@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .: {}
+
+  apps/web:
+    dependencies:
+      '@scaffold/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@scaffold/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+
+  packages/shared-types: {}
+
+  packages/ui: {}

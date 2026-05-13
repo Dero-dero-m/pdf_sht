@@ -1,0 +1,7 @@
+{
+  "name": "scaffold",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}

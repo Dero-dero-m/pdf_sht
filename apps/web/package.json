@@ -1,0 +1,9 @@
+{
+  "name": "@scaffold/web",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@scaffold/ui": "workspace:*",
+    "@scaffold/shared-types": "workspace:*"
+  }
+}
