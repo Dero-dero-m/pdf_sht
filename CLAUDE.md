@@ -6,6 +6,7 @@ The starter monorepo forked for every freelance project. A Next.js 16 web app (A
 
 ## Stack & conventions
 
+- **Source control:** GitLab, not GitHub. Remote is `git@gitlab.com:lazarus_id_group/scaffold.git`. The phase-0 doc generically recommends GitHub; this repo is the exception. CI lives on GitLab Pipelines, not GitHub Actions.
 - **Languages/runtimes:** Node 22, Python 3.12
 - **Package managers:** `pnpm` (never `npm`/`yarn`), `uv` (never `pip`/`poetry`/`conda`)
 - **Frontend:** Next.js 16 App Router. Server Components by default; push `"use client"` as far down the tree as possible (a button is client; the page wrapper is server).
