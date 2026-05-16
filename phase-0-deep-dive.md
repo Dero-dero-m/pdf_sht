@@ -331,9 +331,11 @@ A CLAUDE.md should have these sections:
 
 ### The five Phase 0 slash commands — explained
 
+> **Status note (2026-05-16):** These five commands are **not** implemented in this repo's `.claude/commands/`. They were filtered to user scope and live in `~/.claude/commands/` instead, so they apply to every project rather than being forked per-starter. The project-local `.claude/commands/` directory is deliberately left empty. Future Claude Code sessions: do **not** add `/plan`, `/review`, `/explain`, `/test`, or `/decompose` to `.claude/commands/` here — that's a user-scope decision, not a project-scope one. Project-local slash commands are still fair game when a command is genuinely repo-specific.
+
 Custom slash commands live in `~/.claude/commands/` (global) or `.claude/commands/` (project-local). They're markdown files where the filename becomes the command and the content is the prompt template.
 
-Build these five in week 1:
+The templates below are kept here for reference (so the user-scope versions can be regenerated if they're ever lost), not as a build list for this project:
 
 #### `/plan`
 
