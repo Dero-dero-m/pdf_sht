@@ -1,7 +1,8 @@
+from pathlib import PurePosixPath
 from typing import Any
 
 import anthropic
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,7 @@ from app.config import get_settings
 from app.db import get_session
 from app.deps import get_anthropic_client
 from app.models import Document
+from app.services.docx_export import markdown_to_docx_bytes
 from app.services.pdf_parser import extract_markdown
 from scaffold_shared_types.schemas import DocumentDetail, DocumentList, DocumentSummary
 
@@ -75,3 +77,18 @@ async def get_document(doc_id: int, session: AsyncSession = Depends(get_session)
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found.")
     return DocumentDetail.model_validate(doc, from_attributes=True)
+
+
+@router.get("/{doc_id}/docx")
+async def download_docx(doc_id: int, session: AsyncSession = Depends(get_session)) -> Response:
+    doc = await session.get(Document, doc_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    body = markdown_to_docx_bytes(doc.content_markdown)
+    stem = PurePosixPath(doc.filename).stem or "document"
+    headers = {"content-disposition": f'attachment; filename="{stem}.docx"'}
+    return Response(
+        content=body,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers=headers,
+    )
