@@ -9,11 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@scaffold/shared-types": "workspace:*",
+    "@scaffold/ui": "workspace:*",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "@scaffold/ui": "workspace:*",
-    "@scaffold/shared-types": "workspace:*"
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
