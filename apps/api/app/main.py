@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.config import get_settings
+from app.routes import documents as documents_router
 
 
 class HealthResponse(BaseModel):
@@ -20,6 +21,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(documents_router.router)
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:

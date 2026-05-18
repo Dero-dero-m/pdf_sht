@@ -5,6 +5,7 @@ import pytest
 import sqlalchemy
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.config import get_settings
 from app.db import get_session
@@ -19,7 +20,9 @@ def anyio_backend() -> str:
 
 @pytest.fixture(scope="session")
 def test_engine() -> AsyncEngine:
-    return create_async_engine(get_settings().test_database_url, pool_pre_ping=True)
+    # NullPool: don't cache connections across tests — pytest-asyncio creates a fresh
+    # event loop per test, and asyncpg connections can't be reused across loops.
+    return create_async_engine(get_settings().test_database_url, poolclass=NullPool)
 
 
 @pytest.fixture
