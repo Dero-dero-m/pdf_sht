@@ -2,6 +2,7 @@ from typing import Any
 
 import anthropic
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -9,7 +10,7 @@ from app.db import get_session
 from app.deps import get_anthropic_client
 from app.models import Document
 from app.services.pdf_parser import extract_markdown
-from scaffold_shared_types.schemas import DocumentDetail
+from scaffold_shared_types.schemas import DocumentDetail, DocumentList, DocumentSummary
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -54,4 +55,23 @@ async def upload_document(
     session.add(doc)
     await session.commit()
     await session.refresh(doc)
+    return DocumentDetail.model_validate(doc, from_attributes=True)
+
+
+@router.get("", response_model=DocumentList)
+async def list_documents(session: AsyncSession = Depends(get_session)) -> DocumentList:
+    result = await session.execute(
+        select(Document).order_by(Document.created_at.desc(), Document.id.desc())
+    )
+    docs = result.scalars().all()
+    return DocumentList(
+        items=[DocumentSummary.model_validate(d, from_attributes=True) for d in docs]
+    )
+
+
+@router.get("/{doc_id}", response_model=DocumentDetail)
+async def get_document(doc_id: int, session: AsyncSession = Depends(get_session)) -> DocumentDetail:
+    doc = await session.get(Document, doc_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found.")
     return DocumentDetail.model_validate(doc, from_attributes=True)
