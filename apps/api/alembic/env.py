@@ -1,11 +1,5 @@
 import asyncio
-import sys
 from logging.config import fileConfig
-from pathlib import Path
-
-# Ensure the API project root (containing `app/`) is on sys.path so that
-# `from app.config import ...` works regardless of CWD.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from alembic import context
 from sqlalchemy.engine import Connection
