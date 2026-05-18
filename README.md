@@ -58,7 +58,7 @@ uv sync --directory apps/api
 pnpm --filter @scaffold/web dev
 
 # API (port 8000)
-uv run --directory apps/api fastapi dev main.py
+uv run --directory apps/api fastapi dev app/main.py
 
 # Smoke
 curl http://localhost:8000/health   # → {"status":"ok","version":"0.1.0"}

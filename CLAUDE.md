@@ -24,7 +24,7 @@ The starter monorepo forked for every freelance project. A Next.js 16 web app (A
 
 - **New API endpoint:** define Pydantic schema in `packages/shared-types/`, route in `apps/api/`, integration test alongside.
 - **New UI component:** if reusable across apps, put it in `packages/ui/`; otherwise colocate in `apps/web/`.
-- **Local dev:** `docker compose -f infra/docker-compose.yml up -d` for services; `pnpm --filter @scaffold/web dev` for web (port 3000); `uv run --directory apps/api fastapi dev main.py` for api (port 8000).
+- **Local dev:** `docker compose -f infra/docker-compose.yml up -d` for services; `pnpm --filter @scaffold/web dev` for web (port 3000); `uv run --directory apps/api fastapi dev app/main.py` for api (port 8000).
 - **Don't:**
   - mark components `"use client"` reflexively
   - use sync clients in async handlers

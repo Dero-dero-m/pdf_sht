@@ -16,7 +16,10 @@ export function UploadForm() {
     setError(null);
     try {
       const doc = await uploadDocument(file);
-      startTransition(() => router.push(`/documents/${doc.id}`));
+      startTransition(() => {
+        router.refresh();
+        router.push(`/documents/${doc.id}`);
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
