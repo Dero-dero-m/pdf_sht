@@ -96,3 +96,49 @@ Tracked in `CLAUDE.md` under *Current state*:
   `/explain`, `/test`, `/decompose`)
 - Root `Makefile` with `make test|lint|format` targets
 - API deployment target — Railway vs. Fly.io (open)
+
+## PDF Parser App (Phase 0 reference)
+
+This scaffold ships with a small reference app that uploads PDFs, extracts content with the Anthropic API, persists Markdown in Postgres, and exports a `.docx`. The full flow lives at:
+
+- API: `apps/api/` — `POST /documents`, `GET /documents`, `GET /documents/{id}`, `GET /documents/{id}/docx`
+- Web: `apps/web/` — upload form at `/`, detail page at `/documents/{id}`
+- Shared types: `packages/shared-types/` — Pydantic schemas + generated TS in `index.ts`
+
+### Run locally
+
+```bash
+docker compose -f infra/docker-compose.yml up -d
+
+# api: copy env, set ANTHROPIC_API_KEY, then start
+cp -n apps/api/.env.example apps/api/.env
+# edit apps/api/.env and fill in ANTHROPIC_API_KEY
+cd apps/api && uv run alembic upgrade head
+uv run fastapi dev app/main.py
+
+# web: in another shell
+cp -n apps/web/.env.example apps/web/.env.local
+pnpm --filter @scaffold/web dev
+```
+
+Open http://localhost:3000.
+
+### Try it
+
+Upload a PDF through the UI. The API base64-encodes it, sends it to Claude as a `document` content block, stores the returned Markdown in `documents`, and renders it. Click "Download .docx" on the detail page for an Open XML export.
+
+Without an `ANTHROPIC_API_KEY` set, the home page renders and the empty-state list works, but uploads will fail at the Anthropic call. Use the [Anthropic console](https://console.anthropic.com/) for a key.
+
+### Regenerate TypeScript types after a schema change
+
+```bash
+cd apps/api && uv run python ../../packages/shared-types/scripts/gen_ts.py
+```
+
+### Tests
+
+```bash
+cd apps/api && uv run pytest
+cd apps/api && uv run mypy app/ tests/ alembic/
+cd apps/web && pnpm exec tsc --noEmit && pnpm lint
+```
