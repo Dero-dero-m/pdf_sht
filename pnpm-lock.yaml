@@ -17,9 +17,6 @@ importers:
       '@scaffold/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@scaffold/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       next:
         specifier: 16.2.6
         version: 16.2.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -62,8 +59,6 @@ importers:
         version: 5.9.3
 
   packages/shared-types: {}
-
-  packages/ui: {}
 
 packages:
 
