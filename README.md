@@ -1,144 +1,135 @@
-# freelance-starter
+# PDF Parser
 
-The starter monorepo forked for every freelance project. Phase 0 scaffolding — most
-pieces are wired enough to boot end-to-end; the rest are deliberate stubs that fill in
-during Phase 1.
+Upload a PDF, extract its contents with the Anthropic API, view the result as Markdown, and download it as a Word `.docx`.
 
-See `phase-0-deep-dive.md` for the reasoning behind every choice and `CLAUDE.md` for
-the conventions Claude Code follows in this repo.
-
-## Layout
-
-```
-apps/
-  web/             Next.js 16 App Router + React 19 + Tailwind v4 (workspace: @scaffold/web)
-  api/             FastAPI on Python 3.12, managed by uv (project: scaffold-api)
-packages/
-  shared-types/    Pydantic models → generated TS types  [stub]
-  ui/              Shared components                     [stub]
-infra/
-  docker-compose.yml          Postgres 16 + pgvector, Redis 7 (loopback-bound)
-  .env.example                Compose env template
-  init/postgres/              First-boot SQL (auto-enables pgvector)
-  neon-branch.sh              Per-PR Neon branches       [Phase 1 placeholder]
-.claude/
-  commands/        Custom slash commands                 [empty]
-  agents/          Subagent configs                      [empty]
-  mcp.json         MCP server wiring                     [empty {}]
-CLAUDE.md          Project context for Claude Code
-phase-0-deep-dive.md   Phase 0 reference + reasoning
-```
+A Next.js 16 web app talks to a FastAPI backend; parsed Markdown is persisted in Postgres; shared types are generated from Pydantic models into TypeScript.
 
 ## Stack
 
-- **Frontend:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4
-- **Backend:** FastAPI (async), Pydantic — Pydantic AI lands when Phase 1 needs it
-- **Data:** Postgres 16 + pgvector locally via Docker; Neon in prod
-- **Cache/queue:** Redis 7
+- **Web:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, `react-markdown` + `remark-gfm`
+- **API:** FastAPI on Python 3.12 (async), SQLAlchemy 2 + asyncpg, Alembic, `anthropic`, `pypdf`, `python-docx`
+- **Data:** Postgres 16 + pgvector, Redis 7 (loopback-bound via Docker Compose)
+- **Shared types:** Pydantic models in `packages/shared-types/`, TypeScript generated via `pydantic2ts`
 - **Package managers:** `pnpm` (Node 22), `uv` (Python 3.12)
-- **Source control:** GitLab (`git@gitlab.com:lazarus_id_group/scaffold.git`), not GitHub
 
 ## Quickstart
 
 ```bash
-# 1. Local services (Postgres + pgvector + Redis), loopback-bound
+# 1. Local services (Postgres + Redis), loopback-bound
 docker compose -f infra/docker-compose.yml up -d
 
-# 2. Node deps for the monorepo
+# 2. Node deps
 pnpm install
 
-# 3. Python deps for the api
+# 3. Python deps
 uv sync --directory apps/api
+
+# 4. API env — fill in your Anthropic key
+cp -n apps/api/.env.example apps/api/.env
+# edit apps/api/.env and set ANTHROPIC_API_KEY=sk-…
+
+# 5. Web env
+cp -n apps/web/.env.example apps/web/.env.local
+
+# 6. Migrations
+cd apps/api && uv run alembic upgrade head
 ```
 
 ### Run dev servers
 
 ```bash
-# Web (port 3000) — must use the workspace filter; there is no root dev script
-pnpm --filter @scaffold/web dev
-
 # API (port 8000)
 uv run --directory apps/api fastapi dev app/main.py
 
-# Smoke
-curl http://localhost:8000/health   # → {"status":"ok","version":"0.1.0"}
-```
-
-Target: clone → running local dev env in under 10 minutes.
-
-## Local infra notes
-
-- **Docker runtime is OrbStack**, not Docker Desktop. If `docker info` hangs, the
-  daemon is wedged — `orb stop && orb start` is the usual fix.
-- **All service ports bind to `127.0.0.1`** (web 3000, api 8000, postgres 5432,
-  redis 6379). This is deliberate for the SSH-tunnel workflow into the Mac Mini:
-  ```bash
-  ssh -L 3000:localhost:3000 -L 8000:localhost:8000 \
-      -L 5432:localhost:5432 -L 6379:localhost:6379 \
-      lazarus@<host>
-  ```
-- **pgvector is auto-enabled** on first DB boot via
-  `infra/init/postgres/01-enable-extensions.sql`. Don't `CREATE EXTENSION vector`
-  by hand unless the data volume has been wiped.
-- **Default DB URL:** `postgresql://postgres:postgres@localhost:5432/app`. Override
-  by copying `infra/.env.example` to `infra/.env` (gitignored; Compose auto-loads).
-- **Port conflicts with other freelance projects on the same Mac** are common.
-  Diagnose with `lsof -iTCP:<port> -sTCP:LISTEN`; stop the offending container
-  with `docker stop <name>`.
-
-## What's not done yet
-
-Tracked in `CLAUDE.md` under *Current state*:
-
-- `packages/shared-types/` — Pydantic→TS codegen pipeline (only `package.json` stub)
-- `packages/ui/` — workspace stub
-- `.claude/commands/` — the five Phase 0 slash commands (`/plan`, `/review`,
-  `/explain`, `/test`, `/decompose`)
-- Root `Makefile` with `make test|lint|format` targets
-- API deployment target — Railway vs. Fly.io (open)
-
-## PDF Parser App (Phase 0 reference)
-
-This scaffold ships with a small reference app that uploads PDFs, extracts content with the Anthropic API, persists Markdown in Postgres, and exports a `.docx`. The full flow lives at:
-
-- API: `apps/api/` — `POST /documents`, `GET /documents`, `GET /documents/{id}`, `GET /documents/{id}/docx`
-- Web: `apps/web/` — upload form at `/`, detail page at `/documents/{id}`
-- Shared types: `packages/shared-types/` — Pydantic schemas + generated TS in `index.ts`
-
-### Run locally
-
-```bash
-docker compose -f infra/docker-compose.yml up -d
-
-# api: copy env, set ANTHROPIC_API_KEY, then start
-cp -n apps/api/.env.example apps/api/.env
-# edit apps/api/.env and fill in ANTHROPIC_API_KEY
-cd apps/api && uv run alembic upgrade head
-uv run fastapi dev app/main.py
-
-# web: in another shell
-cp -n apps/web/.env.example apps/web/.env.local
+# Web (port 3000) — must use the workspace filter; no root dev script
 pnpm --filter @scaffold/web dev
 ```
 
-Open http://localhost:3000.
+Open <http://localhost:3000>. Upload a PDF; the detail page renders the extracted Markdown and offers a `.docx` download.
 
-### Try it
+Without `ANTHROPIC_API_KEY` set, the home page still loads but uploads will fail at the model call.
 
-Upload a PDF through the UI. The API base64-encodes it, sends it to Claude as a `document` content block, stores the returned Markdown in `documents`, and renders it. Click "Download .docx" on the detail page for an Open XML export.
+## Layout
 
-Without an `ANTHROPIC_API_KEY` set, the home page renders and the empty-state list works, but uploads will fail at the Anthropic call. Use the [Anthropic console](https://console.anthropic.com/) for a key.
+```
+apps/
+  web/                      Next.js 16 App Router (workspace: @scaffold/web)
+    app/
+      page.tsx              Home: upload form + documents list
+      documents/[id]/       Detail page + DOCX download
+      loading.tsx           Suspense skeletons
+      api-client.ts         Typed fetch wrapper using @scaffold/shared-types
+  api/                      FastAPI service (project: scaffold-api)
+    app/
+      main.py               App factory, CORS, health
+      config.py             Settings via pydantic-settings
+      db.py                 Async engine + get_session dep
+      models.py             SQLAlchemy: Document
+      deps.py               Anthropic client dep (override-able in tests)
+      routes/documents.py   Upload + list + get + docx endpoints
+      services/             pdf_parser (Anthropic call), docx_export (Markdown → docx)
+    alembic/                Migrations
+    tests/                  pytest against real Postgres + FakeAnthropic
+packages/
+  shared-types/             Pydantic schemas (Python) + generated index.ts (TS)
+  ui/                       Workspace stub
+infra/
+  docker-compose.yml        Postgres 16 + pgvector, Redis 7-alpine
+  init/postgres/            First-boot SQL (auto-enables pgvector)
+```
 
-### Regenerate TypeScript types after a schema change
+## API surface
+
+| Method | Path                       | Purpose                                  |
+| ------ | -------------------------- | ---------------------------------------- |
+| POST   | `/documents`               | multipart PDF upload → parse → persist   |
+| GET    | `/documents`               | list summaries (newest first)            |
+| GET    | `/documents/{id}`          | full document (incl. extracted Markdown) |
+| GET    | `/documents/{id}/docx`     | stream `.docx` rendered from the Markdown |
+| GET    | `/health`                  | liveness probe                            |
+
+CORS is locked to `http://localhost:3000` by default; override via `CORS_ORIGINS` in `apps/api/.env`.
+
+## Regenerate TypeScript types after a schema change
 
 ```bash
 cd apps/api && uv run python ../../packages/shared-types/scripts/gen_ts.py
 ```
 
-### Tests
+This rewrites `packages/shared-types/index.ts` from the Pydantic models in `scaffold_shared_types.schemas`. The web app consumes those types via the workspace dep + `transpilePackages` in `apps/web/next.config.ts`.
+
+## Tests
 
 ```bash
-cd apps/api && uv run pytest
-cd apps/api && uv run mypy app/ tests/ alembic/
+cd apps/api && uv run pytest                          # against real Postgres (app_test DB)
+cd apps/api && uv run mypy app/ tests/ alembic/       # strict
 cd apps/web && pnpm exec tsc --noEmit && pnpm lint
 ```
+
+The api test fixtures TRUNCATE `documents` per test (no SQLite substitution); the Anthropic client is dependency-injected with a `FakeAnthropic` that records each call. Create the test DB once with:
+
+```bash
+docker compose -f infra/docker-compose.yml exec -T postgres \
+  psql -U postgres -d postgres -c "CREATE DATABASE app_test;"
+uv run --directory apps/api alembic \
+  -x url=postgresql+asyncpg://postgres:postgres@localhost:5432/app_test upgrade head
+```
+
+## Local infra notes
+
+- **Docker runtime is OrbStack**, not Docker Desktop. If `docker info` hangs, `orb stop && orb start` is the usual fix.
+- **All service ports bind to `127.0.0.1`** (web 3000, api 8000, postgres 5432, redis 6379) — deliberate for the SSH-tunnel workflow:
+  ```bash
+  ssh -L 3000:localhost:3000 -L 8000:localhost:8000 \
+      -L 5432:localhost:5432 -L 6379:localhost:6379 \
+      lazarus@<host>
+  ```
+- **pgvector is auto-enabled** on first DB boot via `infra/init/postgres/01-enable-extensions.sql`. (The app doesn't currently use it; it's there for follow-ups like semantic search over extracted Markdown.)
+- **Default DB URL:** `postgresql://postgres:postgres@localhost:5432/app`. Compose-side env overrides live in `infra/.env` (gitignored).
+- **Port conflicts with other local projects** are common. Diagnose with `lsof -iTCP:<port> -sTCP:LISTEN`; stop the offending container with `docker stop <name>`.
+
+## Limitations
+
+- Uploads buffer the whole PDF into memory before the size check (cap defaults to 32 MiB via `MAX_UPLOAD_BYTES`).
+- The DOCX renderer covers ATX headings, paragraphs, and bullet/numbered lists — the shapes Claude reliably emits for PDF extraction. Inline emphasis renders as plain text.
+- `.doc` (legacy CFB) is not supported; the export is `.docx` (Open XML), which opens in Word, Pages, Google Docs, and LibreOffice.
