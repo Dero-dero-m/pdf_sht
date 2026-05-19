@@ -2,14 +2,18 @@ import io
 
 import pytest
 from httpx import AsyncClient
+from pypdf import PdfWriter
 
 from tests.conftest import FakeAnthropic
 
 
 def _minimal_pdf(pages: int = 1) -> bytes:
-    # Just needs the magic header and enough "/Type /Page" markers for the page-count heuristic.
-    body = b"%PDF-1.4\n" + b"\n".join(b"/Type /Page" for _ in range(pages))
-    return body + b"\n%%EOF\n"
+    writer = PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=72, height=72)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
 
 
 @pytest.mark.asyncio

@@ -1,8 +1,11 @@
+import io
 from pathlib import PurePosixPath
 from typing import Any
 
 import anthropic
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +21,10 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 
 def _count_pages(pdf_bytes: bytes) -> int:
-    return max(pdf_bytes.count(b"/Type /Page"), 1)
+    try:
+        return len(PdfReader(io.BytesIO(pdf_bytes)).pages)
+    except (PdfReadError, ValueError, OSError):
+        return 1
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=DocumentDetail)
