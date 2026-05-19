@@ -1,6 +1,16 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _ensure_async_pg(url: str) -> str:
+    """Coerce Railway/Heroku-style `postgres://` URLs into async SQLAlchemy form."""
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+    return url
 
 
 class Settings(BaseSettings):
@@ -12,6 +22,11 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-6"
     cors_origins: str = "http://localhost:3000"
     max_upload_bytes: int = 32 * 1024 * 1024
+
+    @field_validator("database_url", "test_database_url", mode="before")
+    @classmethod
+    def _normalize_db_url(cls, v: object) -> object:
+        return _ensure_async_pg(v) if isinstance(v, str) else v
 
     @property
     def cors_origins_list(self) -> list[str]:
