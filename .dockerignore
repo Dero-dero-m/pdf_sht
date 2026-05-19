@@ -1,0 +1,12 @@
+# Keeps the build context small on Railway / `docker build`.
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.next
+**/.turbo
+.git
+.gitignore
+*.log
